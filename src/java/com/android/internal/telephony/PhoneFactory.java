@@ -60,6 +60,13 @@ import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.Map;
 
+import java.lang.reflect.Method;
+import java.lang.reflect.InvocationTargetException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.io.File;
+
 /**
  * {@hide}
  */
@@ -272,6 +279,43 @@ public class PhoneFactory {
                 for (int i = 0; i < numPhones; i++) {
                     sTelephonyNetworkFactories[i] = new TelephonyNetworkFactory(
                             Looper.myLooper(), sPhones[i]);
+                }
+                String classname = "com.android.internal.telephony.LGImsPhoneProxy";
+                String classname2 = "LGImsPhoneProxy";
+                try {
+                    URLClassLoader child = new URLClassLoader(
+                        new URL[] {new File("/system/framework/lg-framework.jar").toURI().toURL()},
+                        PhoneFactory.class.getClassLoader()
+                    );
+                    Rlog.i("LGPhone", "after child");
+                    ClassLoader cl = PhoneFactory.class.getClassLoader();
+                    Rlog.i("LGPhone", "after cl");
+                    Class lgImsPhoneProxy = Class.forName(classname, true, cl);
+                    Rlog.i("LGPhone", "after lgImsPhoneProxy");
+                    Class[] paramTypes = new Class[] {Context.class, Phone[].class, CommandsInterface[].class };
+                    Rlog.i("LGPhone", "after paramTypes");
+                    Method method = lgImsPhoneProxy.getDeclaredMethod("create", paramTypes);
+                    Rlog.i("LGPhone", "after method");
+                    method.invoke(null, context, sPhones, sCommandsInterfaces);
+                    //Rlog.i("LGPhone", "after result");
+                } catch (MalformedURLException e) {
+                    Rlog.e("LGPhone", "Malformed URL Exception");
+                    Rlog.e("LGPhone", e.getMessage());
+                } catch (ClassNotFoundException e) {
+                    Rlog.e("LGPhone", "Error loading class " + classname);
+                    Rlog.e("LGPhone", e.getMessage());
+                } catch (NoSuchMethodException e) {
+                    Rlog.e("LGPhone", "No such Method");
+                    Rlog.e("LGPhone", e.getMessage());
+                } catch (IllegalArgumentException e) {
+                    Rlog.e("LGPhone", "Illegal Argument");
+                    Rlog.e("LGPhone", e.getMessage());
+                } catch (IllegalAccessException e) {
+                    Rlog.e("LGPhone", "Illegal Access");
+                    Rlog.e("LGPhone", e.getMessage());
+                } catch (InvocationTargetException e) {
+                    Rlog.e("LGPhone", "Invocation Target Exception");
+                    Rlog.e("LGPhone", e.getCause().getMessage());
                 }
             }
         }
